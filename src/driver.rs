@@ -1,6 +1,6 @@
 use std::env;
 use std::process::Command;
-
+use crate::driver::lexer::token::Token;
 use lexer::lex;
 
 #[path="./lexer.rs"]
@@ -68,7 +68,10 @@ pub fn driver(){
             assemble(&input_file.as_str());
         }
         Args::Lex => {
-            lex(&ppced_file);
+            let tokens: Vec<Token> = lex(&ppced_file);
+            for x in tokens{
+                println!("Token: {:?}", x);
+            }
         }
         Args::Parse => {
             println!("TODO: Implement This!");

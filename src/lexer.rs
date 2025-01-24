@@ -3,51 +3,105 @@ use std::io::{self, BufRead};
 use std::path::Path;
 
 
-use token::Token;
+use token::{Token, TokenType};
 pub mod token;
 
 #[cfg(test)]
 #[path="./unit_tests/lexer_test.rs"]
 mod lexer_test;
+pub fn lex(file_path: &str) -> Vec<Token> {
+    let mut tokens: Vec<Token> = Vec::new();
 
-pub fn lex(file_path: &str) -> Vec<Token>{
-    let tokens: Vec<Token> = Vec::new();
     if let Ok(lines) = read_lines(file_path) {
-        for line in lines.map_while(Result::ok){
-            let mut characters = line.chars();
-
+        // Iterate over all lines in the file
+        for line in lines.map_while(Result::ok) {
+            let characters = line.chars();
+            let len = line.len();
             let mut left: usize = 0;
             let mut right: usize = 0;
 
-            let msg = "Failing parsing of line";
+            // Process each line until characters are consumed
+            while right <= len && left <= right {
+                if let Some(ch) = characters.clone().nth(right) {
+                    if !is_delimiter(ch) {
+                        right += 1;
+                    }
 
-            while right <= left && left <= right {
-                if !is_delimiter(characters.nth(right).expect(msg)) {
-                    right += 1;
-                }
+                    if is_delimiter(ch) && left == right {
+                        let mut token = Token {
+                            token: TokenType::Unknown,
+                            val: ch.to_string(),
+                        };
+                        if is_operator(ch) {
+                            println!("Token: Operator, Value: {}", ch);
+                        }
+                        else{
+                            match ch {
+                                '(' => {token.token = TokenType::OpenPar;},
+                                ')' => {token.token = TokenType::ClosePar;},
+                                '{' => {token.token = TokenType::OpenBrace;},
+                                '}' => {token.token = TokenType::CloseBrace;},
+                                ';' => {token.token = TokenType::Semicolon;},
+                                ' ' => (),
+                                _ => {println!("Not implemented delimiter")},
+                            }
+                        }
+                        right += 1;
+                        left = right;
+                    }
 
-                if is_delimiter(characters.nth(right).expect(msg)) && left == right {
-                    if is_operator(characters.nth(right).expect(msg)) {
-                        println!("Token: Operator, Value: {}", characters.nth(right).expect(msg))
+                    else if (is_delimiter(ch) && left != right)
+                        || (right == len && left != right){
+                        let substr: String = characters
+                            .clone()
+                            .skip(left)
+                            .take(right - left)
+                            .collect();
+
+                        let mut token = Token {
+                            token: TokenType::Unknown,
+                            val: substr.clone(),
+                        };
+
+                        if is_keyword(&substr) {
+                            match substr.as_str() {
+                                "int" => token.token = TokenType::IntKey,
+                                "return" => token.token = TokenType::ReturnKey,
+                                "void" => token.token = TokenType::VoidKey,
+                                _ => panic!("Token type {} not implemented yet!", substr),
+                            }
+                        }
+                        
+                        else if is_integer(&substr) {
+                            token.token = TokenType::Constant; 
+                        }
+                        
+                        else if is_valid_identifier(&substr)
+                            && !is_delimiter(
+                                characters
+                                    .clone()
+                                    .nth(right.saturating_sub(1))
+                                    .expect(&format!("Failing parsing of line, l: {}, r: {}", left, right))){
+                            token.token = TokenType::Identifier;
+                        } else if !is_valid_identifier(&substr)
+                            && !is_delimiter(
+                                characters
+                                    .clone()
+                                    .nth(right.saturating_sub(1))
+                                    .expect(&format!("Failing parsing of line, l: {}, r: {}", left, right))){
+                            panic!("Unidentified Token: {}", substr);
+                        }
+
+                        tokens.push(token);
+                        left = right;
                     }
-                    right += 1;
-                    left = right;
-                }
-                else if is_delimiter(characters.nth(right).expect(msg)) && left != right || right == characters.clone().count() && left != right {
-                    let substr: String = characters.clone().skip(left).take(right - left).collect();
-                    if is_keyword(&substr) {
-                        println!("Token: Keyword, Value: {}", substr);
-                    }
-                    else if is_integer(&substr) {
-                        println!("Token: Integer, Value: {}", substr);
-                    }
-                    else if is_valid_identifier(&substr) {
-                        println!("Token: Identifier, Value: {}", substr);
-                    }
+                } else {
+                    break;
                 }
             }
         }
     }
+
     tokens
 }
 
@@ -102,14 +156,15 @@ fn is_keyword(st : &str) -> bool {
     
 }
 
-fn is_integer(st : &str) -> bool{
+fn is_integer(st: &str) -> bool {
     if st.is_empty() {
         return false;
     }
-    let mut count: usize = 0;
-    let mut ch = st.chars();
-    while ch.nth(count).expect("Failed parsing of line").is_digit(10) {
-        count += 1;
+    let mut iter = st.chars();
+    while let Some(c) = iter.next() {
+        if !c.is_ascii_digit() {
+            return false;
+        }
     }
-    ch.nth(count).is_none()
+    true
 }

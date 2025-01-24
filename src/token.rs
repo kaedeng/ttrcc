@@ -1,3 +1,5 @@
+#[derive(Debug)]
+#[derive(PartialEq)]
 pub enum TokenType {
     Identifier,
     Constant,
@@ -8,10 +10,12 @@ pub enum TokenType {
     ClosePar,
     OpenBrace,
     CloseBrace,
-    Semicolon
+    Semicolon,
+    Unknown
 }
-
+#[derive(Debug)]
+#[derive(PartialEq)]
 pub struct Token {
-    token: TokenType,
-    val: String
+    pub token: TokenType,
+    pub val: String
 }
