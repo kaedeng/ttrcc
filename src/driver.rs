@@ -1,6 +1,14 @@
 use std::env;
 use std::process::Command;
-mod test;
+
+use lexer::lex;
+
+#[path="./lexer.rs"]
+pub mod lexer;
+
+#[cfg(test)]
+#[path="./unit_tests/driver_test.rs"]
+mod driver_test;
 
 enum Args {
     Lex,
@@ -36,7 +44,6 @@ pub fn driver(){
     // Reminder to delete proprocess file after compiling
     let input_file = env::args().nth(1).expect("Input file not provided!");
     let ppced_file = input_file.replace(".c", ".i");
-    let output_file = input_file.replace(".c", "");
 
     let result = Command::new("gcc")
         .arg("-E")
@@ -58,9 +65,10 @@ pub fn driver(){
     match run_arg {
         Args::Default => {
             println!("TODO: Implement This!");
+            assemble(&input_file.as_str());
         }
         Args::Lex => {
-            println!("TODO: Implement This!");
+            lex(&ppced_file);
         }
         Args::Parse => {
             println!("TODO: Implement This!");
@@ -70,8 +78,11 @@ pub fn driver(){
         }
     }
         
+}
 
+fn assemble(input_file: &str) {
     let asm_file = "todo";
+    let output_file = input_file.replace(".c", "");
     let result = Command::new("gcc")
         .arg(&asm_file)
         .arg("-o")

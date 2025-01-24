@@ -1,11 +1,10 @@
 
 #[allow(dead_code, unused_imports)]
-#[cfg(test)]
-mod test {
+mod lexer_test {
     use super::*;
 
     #[test]
-    fn boilerLexer(){
+    fn boiler_driver(){
         assert_eq!(1, 1)
     }
 
